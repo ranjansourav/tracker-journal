@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +217,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+=======
+node_modules/
+dist/
+*.log
+package-lock.json
+.DS_Store
+.env
+node_modules
+data.json
+>>>>>>> 99d1f18 (Initial commit: Tracker-Journal scaffold)

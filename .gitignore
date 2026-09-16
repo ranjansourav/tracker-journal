@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -218,6 +219,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 =======
+=======
+>>>>>>> 96bfdce (chore: add Vite React tracker app, trading journal, Tailwind, and deployment config)
 node_modules/
 dist/
 *.log

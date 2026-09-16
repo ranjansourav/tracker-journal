@@ -1,0 +1,34 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+html { font-size: 16px; }
+body { @apply bg-white text-slate-900 antialiased leading-relaxed; }
+.dark body { @apply bg-slate-900 text-slate-100; }
+
+.container { max-width: none; width: 100%; margin: 1rem auto; padding: 0 1.25rem; }
+
+/* Improve input/text visibility and focus */
+input, textarea, select, button {
+	@apply text-slate-900 dark:text-slate-100;
+}
+
+input::placeholder, textarea::placeholder {
+	@apply text-slate-400 dark:text-slate-400;
+}
+
+input, textarea, select {
+	@apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700;
+}
+
+button {
+	@apply focus:outline-none focus:ring-2 focus:ring-emerald-400;
+}
+
+/* Slightly larger base text for readability on mobile */
+@media (max-width: 640px) {
+	html { font-size: 17px; }
+}
+

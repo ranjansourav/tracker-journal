@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 Tracker Journal
 
 Quickstart
@@ -46,4 +45,6 @@ npm run preview
 Or use the included `netlify.toml` for Netlify configuration (publish = "dist").
 
 Quick share (optional): you can expose the dev server with `npx ngrok http 5173` and open the URL on your phone for testing.
+
+# Tracker / Journal
 

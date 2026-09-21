@@ -204,7 +204,7 @@ function DetailsModal({item, onClose}){
       </div>
 
       {fullImage && item.image && (
-        <div onClick={()=>setFullImage(false)} className="fixed inset-0 bg-black/90 flex items-center justify-center z-60">
+        <div onClick={()=>setFullImage(false)} className="fixed inset-0 bg-black/90 flex items-center justify-center" style={{zIndex: 99999}}>
           <img src={item.image} alt="full" className="max-w-full max-h-full object-contain" />
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import TradingJournal from './TradingJournal'
+import Dashboard from './Dashboard'
 
 const STORAGE_KEY = 'tracker-journal-entries'
 
@@ -14,6 +15,7 @@ export default function App(){
   const [editing, setEditing] = useState(null)
   const [dark, setDark] = useState(() => true)
   const [viewing, setViewing] = useState(null)
+  const [tradesData, setTradesData] = useState([])
   const [page, setPage] = useState('today')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -31,6 +33,21 @@ export default function App(){
   useEffect(()=>{
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
+
+  // load trades from TradingJournal localStorage when needed
+  useEffect(()=>{
+    function load(){
+      try{
+        const raw = localStorage.getItem('tracker-journal-trades')
+        if(raw) setTradesData(JSON.parse(raw))
+        else setTradesData([])
+      }catch(e){ setTradesData([]) }
+    }
+    load()
+    function onStorage(e){ if(e.key === 'tracker-journal-trades') load() }
+    window.addEventListener('storage', onStorage)
+    return ()=> window.removeEventListener('storage', onStorage)
+  }, [page])
 
   const today = todayStr()
   const todays = useMemo(()=> entries.filter(e=> e.date===today).sort((a,b)=> (a.start||'')> (b.start||'')?1:-1), [entries, today])
@@ -64,6 +81,9 @@ export default function App(){
               <button onClick={()=>setPage('today')} className={`w-full text-left p-2 rounded flex items-center gap-2 ${page==='today'?'bg-emerald-100 dark:bg-emerald-800':''}`}>
                 <span className="font-medium">{sidebarCollapsed ? 'T' : 'Today'}</span>
               </button>
+              <button onClick={()=>setPage('dashboard')} className={`w-full text-left p-2 rounded flex items-center gap-2 ${page==='dashboard'?'bg-emerald-100 dark:bg-emerald-800':''}`}>
+                <span className="font-medium">{sidebarCollapsed ? 'D' : 'Dashboard'}</span>
+              </button>
               <button onClick={()=>setPage('trading')} className={`w-full text-left p-2 rounded flex items-center gap-2 ${page==='trading'?'bg-emerald-100 dark:bg-emerald-800':''}`}>
                 <span className="font-medium">{sidebarCollapsed ? 'J' : 'Trading Journal'}</span>
               </button>
@@ -96,6 +116,10 @@ export default function App(){
                 </div>
               </section>
             </>
+          )}
+
+          {page==='dashboard' && (
+            <Dashboard trades={tradesData} />
           )}
 
           {page==='trading' && (

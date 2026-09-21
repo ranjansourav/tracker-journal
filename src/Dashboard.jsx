@@ -4,10 +4,24 @@ export default function Dashboard({trades=[]}){
   // trades: array of trade objects with rrAchieved (e.g. '2R' or '-1R') or numeric
   const parsed = useMemo(()=> trades.map(t=>{
     let rr = 0
-    if(t.rrAchieved && typeof t.rrAchieved === 'string'){
-      const m = t.rrAchieved.match(/(-?\d+(?:\.\d+)?)/)
-      if(m) rr = Number(m[1])
-    }else if(typeof t.rrAchieved === 'number') rr = t.rrAchieved
+    if(t.rrAchieved != null){
+      if(typeof t.rrAchieved === 'number'){
+        rr = t.rrAchieved
+      }else if(typeof t.rrAchieved === 'string'){
+        const s = t.rrAchieved.trim()
+        // handle formats like '1:2.7' -> take right side as R:R value (2.7)
+        if(s.includes(':')){
+          const parts = s.split(':').map(p=>p.trim())
+          const right = parts[1] || parts[0]
+          const n = parseFloat(right.replace(/[^0-9.-]/g, ''))
+          if(!isNaN(n)) rr = n
+        }else{
+          // handle '2R', '2.7R', '1.5' etc. - extract first numeric value
+          const m = s.match(/-?\d+(?:\.\d+)?/)
+          if(m) rr = Number(m[0])
+        }
+      }
+    }
     const win = rr>0
     const time = t.entryTime || ''
     const day = t.date || ''

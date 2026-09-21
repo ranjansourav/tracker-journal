@@ -13,6 +13,7 @@ export default function App(){
   const [entries, setEntries] = useState([])
   const [editing, setEditing] = useState(null)
   const [dark, setDark] = useState(() => true)
+  const [viewing, setViewing] = useState(null)
   const [page, setPage] = useState('today')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -87,7 +88,7 @@ export default function App(){
               <section className="grid md:grid-cols-2 gap-6">
                 <div>
                   <h2 className="text-lg font-medium mb-2">Today&apos;s Timeline</h2>
-                  <Timeline items={todays} onEdit={setEditing} onDelete={remove} />
+                  <Timeline items={todays} onEdit={setEditing} onDelete={remove} onView={setViewing} />
                 </div>
                 <div>
                   <h2 className="text-lg font-medium mb-2">Summary</h2>
@@ -101,6 +102,7 @@ export default function App(){
             <TradingJournal />
           )}
         </main>
+        {viewing && <DetailsModal item={viewing} onClose={()=> setViewing(null)} />}
       </div>
     </div>
   )
@@ -152,7 +154,7 @@ function ActivityForm({onSave, editing, onCancel}){
   )
 }
 
-function Timeline({items, onEdit, onDelete}){
+function Timeline({items, onEdit, onDelete, onView}){
   if(items.length===0) return <div className="text-sm text-slate-500">No activities logged today.</div>
   return (
     <div className="space-y-2">
@@ -164,12 +166,49 @@ function Timeline({items, onEdit, onDelete}){
             {it.notes && <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{it.notes}</div>}
           </div>
           <div className="flex flex-col gap-2 ml-4">
+            <button onClick={()=> onView && onView(it)} className="px-2 py-1 bg-sky-500 text-white rounded text-sm">View</button>
             <button onClick={()=> onEdit(it)} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-sm">Edit</button>
             <button onClick={()=> onDelete(it.id)} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
           </div>
         </div>
       ))}
     </div>
+  )
+}
+
+function DetailsModal({item, onClose}){
+  if(!item) return null
+  const [fullImage, setFullImage] = useState(false)
+
+  useEffect(()=>{
+    function onKey(e){ if(e.key==='Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return ()=> document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <>
+      <div onClick={onClose} className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div onClick={e=>e.stopPropagation()} className="bg-white dark:bg-slate-800 p-4 rounded max-w-2xl w-full">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-medium">{item.title} <span className="text-sm text-slate-400">· {item.category}</span></h3>
+              <div className="text-sm text-slate-500">{item.start || '—'} • {Math.round((Number(item.duration)||0)/60*100)/100} hrs</div>
+            </div>
+            <div>
+              <button onClick={onClose} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">Close</button>
+            </div>
+          </div>
+          {item.notes && <div className="mt-4 text-sm text-slate-600 dark:text-slate-300">{item.notes}</div>}
+        </div>
+      </div>
+
+      {fullImage && item.image && (
+        <div onClick={()=>setFullImage(false)} className="fixed inset-0 bg-black/90 flex items-center justify-center z-60">
+          <img src={item.image} alt="full" className="max-w-full max-h-full object-contain" />
+        </div>
+      )}
+    </>
   )
 }
 

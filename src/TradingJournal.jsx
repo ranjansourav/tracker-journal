@@ -7,6 +7,7 @@ function uid(){ return Date.now().toString(36) }
 export default function TradingJournal(){
   const [trades, setTrades] = useState([])
   const [editing, setEditing] = useState(null)
+  const [viewing, setViewing] = useState(null)
 
   useEffect(()=>{ try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw) setTrades(JSON.parse(raw)) }catch(e){} }, [])
   useEffect(()=>{ localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)) }, [trades])
@@ -48,6 +49,7 @@ export default function TradingJournal(){
                   <div className="flex flex-col items-end gap-2">
                     {t.image && <img src={t.image} alt="trade" className="w-32 h-20 object-cover rounded border" />}
                     <div className="flex gap-2">
+                        <button onClick={()=> setViewing(t)} className="px-2 py-1 bg-sky-500 text-white rounded text-sm">View</button>
                       <button onClick={()=> setEditing(t)} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-sm">Edit</button>
                       <button onClick={()=> remove(t.id)} className="px-2 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
                     </div>
@@ -58,9 +60,57 @@ export default function TradingJournal(){
           </div>
         </section>
       </div>
+      {viewing && <DetailsModal item={viewing} onClose={()=> setViewing(null)} />}
     </div>
   )
 }
+
+function DetailsModal({item, onClose}){
+  if(!item) return null
+  const [fullImage, setFullImage] = useState(false)
+
+  useEffect(()=>{
+    function onKey(e){ if(e.key==='Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return ()=> document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <>
+      <div onClick={onClose} className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div onClick={e=>e.stopPropagation()} className="bg-white dark:bg-slate-800 p-4 rounded max-w-2xl w-full">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-medium">{item.instrument}</h3>
+              <div className="text-sm text-slate-500">{item.date} • {item.entryTime} → {item.exitTime}</div>
+            </div>
+            <div>
+              <button onClick={onClose} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">Close</button>
+            </div>
+          </div>
+
+          <div className="mt-4 text-sm space-y-2">
+            {item.image && (
+              <img onClick={()=>setFullImage(true)} src={item.image} alt="trade" className="w-full h-64 object-contain rounded border cursor-zoom-in" />
+            )}
+            <div>Entry price: {item.entryPrice} • SL: {item.stopLoss} • Target: {item.target} • Lots: {item.lots}</div>
+            <div>R:R Targeted: {item.rrTarget} • Achieved: {item.rrAchieved}</div>
+            <div>Strategy: {item.strategy}</div>
+            <div>Rules: {item.rules}</div>
+            <div>Emotions: {item.emotions}</div>
+          </div>
+        </div>
+      </div>
+
+      {fullImage && (
+        <div onClick={()=>setFullImage(false)} className="fixed inset-0 bg-black/90 flex items-center justify-center z-60">
+          <img src={item.image} alt="full" className="max-w-full max-h-full object-contain" />
+        </div>
+      )}
+    </>
+  )
+}
+
 
 function TradeForm({onSave, editing, onCancel}){
   const today = new Date().toISOString().slice(0,10)

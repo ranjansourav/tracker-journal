@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import TradingJournal from './TradingJournal'
 import Dashboard from './Dashboard'
 
-const STORAGE_KEY = 'tracker-journal-entries'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, options)
 
 function todayStr() {
   return new Date().toISOString().slice(0,10)
@@ -21,7 +22,7 @@ export default function App(){
 
   async function loadEntries() {
     try {
-      const res = await fetch('/api/entries')
+      const res = await apiFetch('/api/entries')
       if (!res.ok) throw new Error('Failed to fetch entries')
       const data = await res.json()
       setEntries(data)
@@ -33,7 +34,7 @@ export default function App(){
 
   async function loadTrades() {
     try {
-      const res = await fetch('/api/trades')
+      const res = await apiFetch('/api/trades')
       if (!res.ok) throw new Error('Failed to fetch trades')
       const data = await res.json()
       setTradesData(data)
@@ -63,7 +64,7 @@ export default function App(){
     try {
       const method = payload.id ? 'PUT' : 'POST'
       const url = payload.id ? `/api/entries/${payload.id}` : '/api/entries'
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -84,7 +85,7 @@ export default function App(){
 
   async function remove(id){
     try {
-      const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/entries/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete entry')
       setEntries(prev => prev.filter(p => p.id !== id))
     } catch (error) {

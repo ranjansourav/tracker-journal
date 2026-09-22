@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'tracker-journal-trades'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, options)
 
 function uid(){ return Date.now().toString(36) }
 
@@ -11,7 +12,7 @@ export default function TradingJournal(){
 
   async function loadTrades() {
     try {
-      const res = await fetch('/api/trades')
+      const res = await apiFetch('/api/trades')
       if (!res.ok) throw new Error('Failed to fetch trades')
       const data = await res.json()
       setTrades(data)
@@ -29,7 +30,7 @@ export default function TradingJournal(){
     try {
       const method = t.id ? 'PUT' : 'POST'
       const url = t.id ? `/api/trades/${t.id}` : '/api/trades'
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(t)
@@ -48,7 +49,7 @@ export default function TradingJournal(){
 
   async function remove(id){
     try {
-      const res = await fetch(`/api/trades/${id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/trades/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete trade')
       setTrades(prev => prev.filter(p => p.id !== id))
     } catch (error) {

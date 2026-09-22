@@ -1,56 +1,94 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const {
+  initializeDatabase,
+  getEntries,
+  getTrades,
+  saveEntry,
+  saveTrade,
+  deleteEntry,
+  deleteTrade
+} = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const db = initializeDatabase();
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
 
-const DATA_FILE = path.join(__dirname, 'data.json');
-
-function readData() {
+app.get('/api/entries', async (req, res) => {
   try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw || '[]');
-  } catch (e) {
-    return [];
+    const entries = await getEntries(db);
+    res.json(entries);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-}
-
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-app.get('/api/entries', (req, res) => {
-  const entries = readData();
-  res.json(entries);
 });
 
-app.post('/api/entries', (req, res) => {
-  const entries = readData();
-  const entry = {
-    id: Date.now().toString(),
-    title: req.body.title || '',
-    content: req.body.content || '',
-    tags: req.body.tags || [],
-    createdAt: new Date().toISOString()
-  };
-  entries.unshift(entry);
-  writeData(entries);
-  res.json(entry);
+app.post('/api/entries', async (req, res) => {
+  try {
+    const entry = await saveEntry(db, { ...req.body, id: req.body.id || undefined });
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.delete('/api/entries/:id', (req, res) => {
-  const id = req.params.id;
-  let entries = readData();
-  const before = entries.length;
-  entries = entries.filter(e => e.id !== id);
-  writeData(entries);
-  res.json({ deleted: before - entries.length });
+app.put('/api/entries/:id', async (req, res) => {
+  try {
+    const entry = await saveEntry(db, { ...req.body, id: req.params.id });
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/entries/:id', async (req, res) => {
+  try {
+    const deleted = await deleteEntry(db, req.params.id);
+    res.json({ deleted });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/trades', async (req, res) => {
+  try {
+    const trades = await getTrades(db);
+    res.json(trades);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/trades', async (req, res) => {
+  try {
+    const trade = await saveTrade(db, { ...req.body, id: req.body.id || undefined });
+    res.json(trade);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/trades/:id', async (req, res) => {
+  try {
+    const trade = await saveTrade(db, { ...req.body, id: req.params.id });
+    res.json(trade);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/trades/:id', async (req, res) => {
+  try {
+    const deleted = await deleteTrade(db, req.params.id);
+    res.json({ deleted });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

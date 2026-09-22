@@ -19,50 +19,78 @@ export default function App(){
   const [page, setPage] = useState('today')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  useEffect(() => {
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if(raw) setEntries(JSON.parse(raw))
-    }catch(e){ console.error(e) }
-  }, [])
+  async function loadEntries() {
+    try {
+      const res = await fetch('/api/entries')
+      if (!res.ok) throw new Error('Failed to fetch entries')
+      const data = await res.json()
+      setEntries(data)
+    } catch (error) {
+      console.error(error)
+      setEntries([])
+    }
+  }
 
-  useEffect(()=>{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-  }, [entries])
+  async function loadTrades() {
+    try {
+      const res = await fetch('/api/trades')
+      if (!res.ok) throw new Error('Failed to fetch trades')
+      const data = await res.json()
+      setTradesData(data)
+    } catch (error) {
+      console.error(error)
+      setTradesData([])
+    }
+  }
+
+  useEffect(() => {
+    loadEntries()
+    loadTrades()
+  }, [])
 
   useEffect(()=>{
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
 
-  // load trades from TradingJournal localStorage when needed
   useEffect(()=>{
-    function load(){
-      try{
-        const raw = localStorage.getItem('tracker-journal-trades')
-        if(raw) setTradesData(JSON.parse(raw))
-        else setTradesData([])
-      }catch(e){ setTradesData([]) }
-    }
-    load()
-    function onStorage(e){ if(e.key === 'tracker-journal-trades') load() }
-    window.addEventListener('storage', onStorage)
-    return ()=> window.removeEventListener('storage', onStorage)
+    if (page === 'trading') loadTrades()
   }, [page])
 
   const today = todayStr()
   const todays = useMemo(()=> entries.filter(e=> e.date===today).sort((a,b)=> (a.start||'')> (b.start||'')?1:-1), [entries, today])
 
-  function saveEntry(payload){
-    if(payload.id){
-      setEntries(prev=> prev.map(p=> p.id===payload.id? payload : p))
-    }else{
-      payload.id = uid(); payload.createdAt = new Date().toISOString();
-      setEntries(prev=> [payload, ...prev])
+  async function saveEntry(payload){
+    try {
+      const method = payload.id ? 'PUT' : 'POST'
+      const url = payload.id ? `/api/entries/${payload.id}` : '/api/entries'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) throw new Error('Failed to save entry')
+      const saved = await res.json()
+      setEntries(prev => {
+        if (payload.id) {
+          return prev.map(item => item.id === saved.id ? saved : item)
+        }
+        return [saved, ...prev]
+      })
+    } catch (error) {
+      console.error(error)
     }
     setEditing(null)
   }
 
-  function remove(id){ setEntries(prev=> prev.filter(p=> p.id!==id)) }
+  async function remove(id){
+    try {
+      const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete entry')
+      setEntries(prev => prev.filter(p => p.id !== id))
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const totals = useMemo(()=>{
     const byCat = { Work:0, Health:0, Learning:0, Personal:0 }

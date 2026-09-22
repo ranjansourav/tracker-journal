@@ -9,16 +9,52 @@ export default function TradingJournal(){
   const [editing, setEditing] = useState(null)
   const [viewing, setViewing] = useState(null)
 
-  useEffect(()=>{ try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw) setTrades(JSON.parse(raw)) }catch(e){} }, [])
-  useEffect(()=>{ localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)) }, [trades])
+  async function loadTrades() {
+    try {
+      const res = await fetch('/api/trades')
+      if (!res.ok) throw new Error('Failed to fetch trades')
+      const data = await res.json()
+      setTrades(data)
+    } catch (error) {
+      console.error(error)
+      setTrades([])
+    }
+  }
 
-  function save(t){
-    if(t.id) setTrades(prev=> prev.map(p=> p.id===t.id? t: p))
-    else { t.id = uid(); t.createdAt = new Date().toISOString(); setTrades(prev=> [t, ...prev]) }
+  useEffect(() => {
+    loadTrades()
+  }, [])
+
+  async function save(t){
+    try {
+      const method = t.id ? 'PUT' : 'POST'
+      const url = t.id ? `/api/trades/${t.id}` : '/api/trades'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(t)
+      })
+      if (!res.ok) throw new Error('Failed to save trade')
+      const saved = await res.json()
+      setTrades(prev => {
+        if (t.id) return prev.map(p => p.id === saved.id ? saved : p)
+        return [saved, ...prev]
+      })
+    } catch (error) {
+      console.error(error)
+    }
     setEditing(null)
   }
 
-  function remove(id){ setTrades(prev=> prev.filter(p=> p.id!==id)) }
+  async function remove(id){
+    try {
+      const res = await fetch(`/api/trades/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete trade')
+      setTrades(prev => prev.filter(p => p.id !== id))
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   return (
     <div>
